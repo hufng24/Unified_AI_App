@@ -26,3 +26,7 @@ Các test 0.2 bổ sung kiểm tra OAuth adapter/header/catalog, UI xác minh/h�
 - Chưa ký/notarize bộ cài, chưa có updater hoặc release gate production.
 
 Các giới hạn, thời gian và chỉ số trong đặc tả vẫn là mục tiêu; không phải benchmark đã đo. Xem `implementation-status.md` để tránh nhầm bản Alpha với toàn bộ MVP.
+
+## Hiển thị ảnh trong hội thoại
+
+Bổ sung preview SVG hoàn chỉnh trong code block, giữ mã trong mục thu gọn và phóng to ảnh; cho phép ảnh raster nhúng dạng data URL, chặn tải ảnh remote tự động. SVG chạy trong image document, không chèn HTML vào DOM; từ chối script, event handler, foreignObject và tài nguyên bên ngoài. Ba test bổ sung kiểm render, phóng to và các trường hợp chặn, tổng 24 test TypeScript/UI. Chưa bổ sung tool tạo ảnh raster OpenAI hoặc lưu attachment riêng: thay đổi này hiển thị SVG như ví dụ người dùng gửi và ảnh data URL trong Markdown; không biến model text thành model tạo ảnh.

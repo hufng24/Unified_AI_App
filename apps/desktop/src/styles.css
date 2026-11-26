@@ -1963,3 +1963,12 @@ p {
     align-items: flex-start;
   }
 }
+
+.generated-image {display:block;max-width:100%;padding:0;overflow:hidden;border:1px solid #344661;border-radius:16px;background:#121c2e;cursor:zoom-in;text-align:left;color:#a4b9d4;margin:12px 0;}
+.generated-image img {display:block;max-width:100%;max-height:650px;object-fit:contain;background:#fff;}
+.generated-image span {display:block;padding:10px 16px;font-size:12px;}
+.expanded-generated-image {display:block;width:100%;max-height:75vh;object-fit:contain;}
+.svg-artifact details {margin:10px 0;color:#9bb1d0;}
+.svg-artifact summary {cursor:pointer;font-size:13px;}
+.message-code-block {max-width:100%;overflow:auto;}
+.message-code-block > code {display:block;white-space:pre;padding:18px;background:#090f1c;border-radius:12px;}

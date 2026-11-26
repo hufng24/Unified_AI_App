@@ -47,8 +47,8 @@ import {
   Link2,
   RefreshCw,
 } from "lucide-react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+
+import MessageContent from "./components/MessageContent";
 import type { Project, Provider, Message, SendInput } from "@uai/contracts";
 import { providerNames } from "@uai/contracts/display";
 import { bridge, branch, errorText, native, type NativeEvent } from "./bridge";
@@ -566,23 +566,7 @@ export default function App() {
                                   )}
                                 </div>
                                 <div className="markdown">
-                                  <Markdown
-                                    remarkPlugins={[remarkGfm]}
-                                    skipHtml
-                                    components={{
-                                      a: ({ children }) => (
-                                        <span
-                                          className="plain-link"
-                                          title="Liên kết ngoài chưa mở trong bản nội bộ"
-                                        >
-                                          {children}
-                                        </span>
-                                      ),
-                                      img: () => null,
-                                    }}
-                                  >
-                                    {stream[m.id] ?? m.text ?? ""}
-                                  </Markdown>
+                                  <MessageContent text={stream[m.id] ?? m.text ?? ""} />
                                   {!m.text &&
                                     !stream[m.id] &&
                                     busy &&

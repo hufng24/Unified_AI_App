@@ -77,3 +77,7 @@ CI kiểm tra TypeScript trên Linux và build/test native trên macOS/Windows. 
 - [Trạng thái triển khai](docs/implementation-status.md)
 
 SQL Cloud chưa được chạy trên PostgreSQL/Supabase. Schema Local được app sử dụng và có smoke test. Không chạy baseline Cloud vào production hoặc coi file SQL là Sync Service đã được cài đặt.
+
+## Dùng website ChatGPT trong app
+
+Bấm **Mở ChatGPT trong app** ở sidebar và tự đăng nhập. Cửa sổ tải trực tiếp website ChatGPT, với lịch sử/tính năng do tài khoản ChatGPT quản lý; không trộn vào hội thoại SQLite. Đã kiểm trang mở được trên macOS; đăng nhập, tạo ảnh, voice và download chưa kiểm thực tế. Xem [khả năng và giới hạn](docs/chatgpt-web.md).

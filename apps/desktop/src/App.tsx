@@ -377,6 +377,26 @@ export default function App() {
             </p>
           )}
         </div>
+        <div className="chatgpt-web-entry">
+          <button
+            className="primary"
+            disabled={!native}
+            onClick={() => void run(() => bridge.openChatGPT())}
+          >
+            Mở ChatGPT trong app
+          </button>
+          <p>
+            Dùng website ChatGPT chính thức trong cửa sổ riêng. Đăng nhập trực
+            tiếp; lịch sử nằm trên ChatGPT.
+          </p>
+          <button
+            className="ghost"
+            disabled={!native}
+            onClick={() => void run(() => bridge.openChatGPTBrowser())}
+          >
+            Mở bằng trình duyệt
+          </button>
+        </div>
         <div className="sidebar-bottom">
           <div className="local-status">
             <span className="status-dot" />

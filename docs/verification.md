@@ -34,3 +34,7 @@ Bổ sung preview SVG hoàn chỉnh trong code block, giữ mã trong mục thu 
 ## Skill và công cụ tạo ảnh OpenAI
 
 Đã bổ sung skill `image-generation` nạp ở native khi bật chế độ tạo ảnh; tool_choice bắt buộc, xử lý output ảnh hoàn chỉnh, lưu local trong message và chặn gửi base64 trở lại text context. 28 test TypeScript/UI và 15 test Rust đã qua; clippy all-targets không có warning. Có test request tool, payload ảnh sai định dạng và chặn provider không hỗ trợ. Chưa xác minh inference ảnh bằng credential thật. Skill validator Python hệ thống thiếu PyYAML; việc kiểm cấu trúc skill không thay thế kiểm thử hành vi của model.
+
+## ChatGPT Web trong app
+
+Đã build native và mở bằng nút sidebar, xác nhận trực quan trang chatgpt.com tải thành công trong cửa sổ native riêng, có các mục Ảnh, tải tệp, giọng nói và đăng nhập. Chưa đăng nhập/tạo ảnh hoặc kiểm tính năng sau đăng nhập. Không coi việc nhìn thấy nút là tính năng đã được kiểm thử. Xem chatgpt-web.md.

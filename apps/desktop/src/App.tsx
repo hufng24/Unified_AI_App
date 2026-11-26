@@ -119,6 +119,7 @@ export default function App() {
   const [notice, setNotice] = useState("");
   const [connectionId, setConnectionId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [imageMode, setImageMode] = useState(false);
   const [requestId, setRequestId] = useState("");
   const [stream, setStream] = useState<Record<string, string>>({});
   const [projectModal, setProjectModal] = useState<Project | "new" | null>(
@@ -225,7 +226,9 @@ export default function App() {
         setNotice(
           event.status === "cancelled"
             ? "Đã dừng và giữ phần nội dung nhận được."
-            : `Phản hồi chưa hoàn tất (${event.code}). Bạn có thể tạo lại.`,
+            : imageMode
+              ? `Chưa tạo được ảnh (${event.code}). Kiểm tra quyền image_generation của tài khoản/model và hạn mức.`
+              : `Phản hồi chưa hoàn tất (${event.code}). Bạn có thể tạo lại.`,
         );
       if (event.saved === false)
         setNotice(
@@ -566,7 +569,9 @@ export default function App() {
                                   )}
                                 </div>
                                 <div className="markdown">
-                                  <MessageContent text={stream[m.id] ?? m.text ?? ""} />
+                                  <MessageContent
+                                    text={stream[m.id] ?? m.text ?? ""}
+                                  />
                                   {!m.text &&
                                     !stream[m.id] &&
                                     busy &&
@@ -671,6 +676,20 @@ export default function App() {
                     </div>
                   </div>
                 )}
+                <label className="image-mode-control">
+                  <input
+                    type="checkbox"
+                    checked={imageMode}
+                    disabled={busy}
+                    onChange={(e) => setImageMode(e.target.checked)}
+                  />{" "}
+                  Tạo ảnh · OpenAI{" "}
+                  <span>
+                    {busy && imageMode
+                      ? "Đang tạo ảnh…"
+                      : "Dùng công cụ tạo ảnh thật; quyền và phí theo tài khoản. Skill image-generation đang sẵn sàng."}
+                  </span>
+                </label>
                 <Composer
                   key={ui.conversation ?? "welcome"}
                   conversationId={ui.conversation}
@@ -695,6 +714,7 @@ export default function App() {
                     return send({
                       conversation_id: id,
                       connection_id: connectionId,
+                      image_generation: imageMode,
                       text,
                     });
                   }}

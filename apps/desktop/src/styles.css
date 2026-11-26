@@ -1972,3 +1972,6 @@ p {
 .svg-artifact summary {cursor:pointer;font-size:13px;}
 .message-code-block {max-width:100%;overflow:auto;}
 .message-code-block > code {display:block;white-space:pre;padding:18px;background:#090f1c;border-radius:12px;}
+
+.image-mode-control {display:flex;align-items:center;gap:8px;padding:10px 28px;color:#b4c9e6;font-size:13px;flex-wrap:wrap;}
+.image-mode-control span {font-size:11px;color:#8296b4;}

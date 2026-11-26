@@ -67,3 +67,11 @@ Claude consumer login còn thiếu do cần quyền triển khai từ Anthropic,
 - [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview)
 - [Claude legal/compliance](https://code.claude.com/docs/en/legal-and-compliance)
 - [Claude Platform OAuth apps](https://platform.claude.com/docs/en/manage-claude/oauth-apps/overview)
+
+## Skill tạo ảnh thật
+
+Trong màn hình chat bật **Tạo ảnh · OpenAI**, chọn kết nối OpenAI rồi nhập mô tả ảnh. Native nạp skill `skills/image-generation/SKILL.md` vào instructions; Gateway gửi `image_generation` tool với `tool_choice` bắt buộc và PNG output. Ảnh hoàn chỉnh từ `response.output_item.done` được nhúng trong nội dung hội thoại local, hiển thị inline và phóng to. Tắt chế độ để chat text bình thường. Không tự retry request tính phí hoặc đổi provider khi tạo ảnh thất bại.
+
+Giới hạn: cần model hỗ trợ tool và credential có quyền. Đăng nhập ChatGPT không bảo đảm mọi tool API được cấp; app không dùng backend riêng của website ChatGPT. Chưa có lần tạo ảnh live để chứng nhận quyền tài khoản. Không thể bảo đảm giống hệt tính năng, model, quota hoặc chất lượng của sản phẩm ChatGPT.
+
+Bản đầu tạo ảnh mới từ text, chưa hỗ trợ upload, mask/inpainting hoặc chỉnh sửa ảnh cũ theo pixel. Base64 được lưu trong message SQLite/outbox/export local, tối đa 16 MiB chuỗi ảnh mỗi kết quả; chưa có asset store/cloud sync. Context gửi tiếp thay ảnh cũ bằng ghi chú, không tự gửi lại payload; app không thể xem ảnh cũ để sửa chính xác. Dừng giữa chừng có thể vẫn bị provider tính phí; không có cam kết hoàn tiền.

@@ -63,6 +63,7 @@ export const chatSchema = z
         snapshot_hash: z.string().max(64),
       })
       .strict(),
+    image_generation: z.boolean().optional(),
     max_output_tokens: z.number().int().min(1).max(8192),
     stream: z.literal(true),
   })
@@ -166,6 +167,7 @@ export type Snapshot = {
   data_path: string;
 };
 export type SendInput = {
+  image_generation?: boolean;
   conversation_id: string;
   connection_id: string;
   text: string;

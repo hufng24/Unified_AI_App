@@ -30,3 +30,7 @@ Các giới hạn, thời gian và chỉ số trong đặc tả vẫn là mục 
 ## Hiển thị ảnh trong hội thoại
 
 Bổ sung preview SVG hoàn chỉnh trong code block, giữ mã trong mục thu gọn và phóng to ảnh; cho phép ảnh raster nhúng dạng data URL, chặn tải ảnh remote tự động. SVG chạy trong image document, không chèn HTML vào DOM; từ chối script, event handler, foreignObject và tài nguyên bên ngoài. Ba test bổ sung kiểm render, phóng to và các trường hợp chặn, tổng 24 test TypeScript/UI. Chưa bổ sung tool tạo ảnh raster OpenAI hoặc lưu attachment riêng: thay đổi này hiển thị SVG như ví dụ người dùng gửi và ảnh data URL trong Markdown; không biến model text thành model tạo ảnh.
+
+## Skill và công cụ tạo ảnh OpenAI
+
+Đã bổ sung skill `image-generation` nạp ở native khi bật chế độ tạo ảnh; tool_choice bắt buộc, xử lý output ảnh hoàn chỉnh, lưu local trong message và chặn gửi base64 trở lại text context. 28 test TypeScript/UI và 15 test Rust đã qua; clippy all-targets không có warning. Có test request tool, payload ảnh sai định dạng và chặn provider không hỗ trợ. Chưa xác minh inference ảnh bằng credential thật. Skill validator Python hệ thống thiếu PyYAML; việc kiểm cấu trúc skill không thay thế kiểm thử hành vi của model.

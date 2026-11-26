@@ -26,6 +26,12 @@ export function upstream(
       headers: { Authorization: `Bearer ${key}` },
       body: {
         model: req.model,
+        ...(req.image_generation
+          ? {
+              tools: [{ type: "image_generation", output_format: "png" }],
+              tool_choice: { type: "image_generation" },
+            }
+          : {}),
         instructions: req.context.instructions,
         input: messages,
         ...(req.auth_mode === "chatgpt"
@@ -82,7 +88,7 @@ export async function* parseSSE(
       buffer += decoder.decode(chunk.value, { stream: !chunk.done });
       // Normalize CRLF after joining chunks so a split CR LF is still valid.
       buffer = buffer.replace(/\r\n/g, "\n");
-      if (buffer.length > 2 * 1024 * 1024)
+      if (buffer.length > 20 * 1024 * 1024)
         throw new ProviderError("INVALID_PROVIDER_STREAM");
       let end: number;
       while ((end = buffer.indexOf("\n\n")) >= 0) {
@@ -117,6 +123,28 @@ export function normalize(
   if (event === "error" || v.type === "error" || v.error)
     throw new ProviderError("PROVIDER_ERROR");
   if (provider === "openai") {
+    if (
+      v.type === "response.output_item.done" &&
+      v.item?.type === "image_generation_call" &&
+      v.item.status === "completed"
+    ) {
+      const result = v.item.result;
+      if (
+        typeof result !== "string" ||
+        result.length > 16 * 1024 * 1024 ||
+        !/^[A-Za-z0-9+/]+={0,2}$/.test(result)
+      )
+        throw new ProviderError("INVALID_IMAGE_RESULT");
+      const format = v.item.output_format ?? "png";
+      if (!["png", "jpeg", "webp"].includes(format))
+        throw new ProviderError("INVALID_IMAGE_RESULT");
+      return [
+        {
+          type: "text.delta",
+          text: `\n\n![Ảnh do AI tạo](data:image/${format};base64,${result})\n\n`,
+        },
+      ];
+    }
     if (v.type === "response.output_text.delta")
       return [{ type: "text.delta", text: v.delta }];
     if (v.type === "response.failed") throw new ProviderError("PROVIDER_ERROR");
@@ -175,6 +203,8 @@ export async function* providerStream(
   signal: AbortSignal,
   fetcher: typeof fetch = fetch,
 ): AsyncGenerator<EventPart> {
+  if (req.image_generation && req.provider !== "openai")
+    throw new ProviderError("IMAGE_PROVIDER_UNSUPPORTED", 400);
   const u = upstream(req, key);
   const response = await fetcher(u.url, {
     method: "POST",
@@ -184,6 +214,8 @@ export async function* providerStream(
   });
   if (!response.ok) {
     await response.body?.cancel();
+    if (req.image_generation && response.status === 400)
+      throw new ProviderError("IMAGE_TOOL_UNAVAILABLE", 502);
     throw new ProviderError(
       response.status === 401 || response.status === 403
         ? "PROVIDER_KEY_INVALID"
@@ -195,6 +227,7 @@ export async function* providerStream(
   }
   if (!response.body) throw new ProviderError("EMPTY_PROVIDER_STREAM");
   let terminal = false;
+  let imageReceived = false;
   for await (const frame of parseSSE(response.body)) {
     if (frame.data === "[DONE]") continue;
     let v;
@@ -205,6 +238,17 @@ export async function* providerStream(
     }
     for (const e of normalize(req.provider, frame.event, v)) {
       if (terminal) continue;
+      if (
+        e.type === "text.delta" &&
+        e.text?.includes("![Ảnh do AI tạo](data:image/")
+      )
+        imageReceived = true;
+      if (
+        e.type === "generation.completed" &&
+        req.image_generation &&
+        !imageReceived
+      )
+        throw new ProviderError("IMAGE_NOT_RETURNED");
       yield e;
       if (e.type === "generation.completed") {
         terminal = true;

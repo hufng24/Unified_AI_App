@@ -274,7 +274,9 @@ export function createServer(
           message:
             status === "cancelled"
               ? "Đã dừng phản hồi."
-              : "Không hoàn tất phản hồi. Kiểm tra kết nối, Key và hạn mức provider.",
+              : input.image_generation
+                ? "Không tạo được ảnh. Kiểm tra tài khoản/model có quyền image_generation và hạn mức. App không tự chuyển sang SVG hoặc tính phí thử lại."
+                : "Không hoàn tất phản hồi. Kiểm tra kết nối, Key và hạn mức provider.",
         });
       } finally {
         clearInterval(heartbeat);

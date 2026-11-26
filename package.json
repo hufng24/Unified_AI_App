@@ -1,0 +1,27 @@
+{
+  "name": "unified-ai-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "pnpm --filter @uai/desktop dev",
+    "dev:api": "pnpm --filter @uai/api dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:rust": "cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml",
+    "desktop:build": "pnpm --filter @uai/desktop tauri build",
+    "start:local": "node scripts/start-local.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "jsdom": "^27.4.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

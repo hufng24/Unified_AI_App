@@ -7,3 +7,8 @@ target/
 dist/
 __pycache__/
 *.pyc
+.data/
+apps/desktop/src-tauri/gen/
+*.log
+test-results/
+playwright-report/

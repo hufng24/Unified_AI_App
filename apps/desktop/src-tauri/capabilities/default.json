@@ -1,0 +1,6 @@
+{
+  "identifier": "main-window",
+  "description": "Local trusted UI only. File and network operations run through validated native commands.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

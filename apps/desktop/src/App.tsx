@@ -687,7 +687,7 @@ export default function App() {
                   <span>
                     {busy && imageMode
                       ? "Đang tạo ảnh…"
-                      : "Dùng công cụ tạo ảnh thật; quyền và phí theo tài khoản. Skill image-generation đang sẵn sàng."}
+                      : "Cần OpenAI API Key; đăng nhập ChatGPT chưa hỗ trợ tạo ảnh. Skill image-generation đang sẵn sàng."}
                   </span>
                 </label>
                 <Composer

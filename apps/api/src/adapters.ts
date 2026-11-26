@@ -205,6 +205,7 @@ export async function* providerStream(
 ): AsyncGenerator<EventPart> {
   if (req.image_generation && req.provider !== "openai")
     throw new ProviderError("IMAGE_PROVIDER_UNSUPPORTED", 400);
+  if(req.image_generation && req.auth_mode === "chatgpt") throw new ProviderError("CHATGPT_IMAGE_UNSUPPORTED",400);
   const u = upstream(req, key);
   const response = await fetcher(u.url, {
     method: "POST",

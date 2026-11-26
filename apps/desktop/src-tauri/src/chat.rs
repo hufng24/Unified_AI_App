@@ -44,6 +44,9 @@ pub async fn chat_send(
     let (base, token) = gateway()?;
     let credentials = crate::oauth::credential(&state, &input.connection_id).await?;
     crate::oauth::require_local_gateway(&base, &credentials.auth_mode)?;
+    if input.image_generation && credentials.auth_mode == "chatgpt" {
+        return Err("OpenAI chưa hỗ trợ image_generation qua Sign in with ChatGPT. Chọn kết nối OpenAI API Key có quyền tạo ảnh; gói ChatGPT không cấp quyền này cho app.".into());
+    }
     let key = credentials.token;
     if !state
         .active

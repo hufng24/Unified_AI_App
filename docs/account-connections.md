@@ -75,3 +75,7 @@ Trong màn hình chat bật **Tạo ảnh · OpenAI**, chọn kết nối OpenAI
 Giới hạn: cần model hỗ trợ tool và credential có quyền. Đăng nhập ChatGPT không bảo đảm mọi tool API được cấp; app không dùng backend riêng của website ChatGPT. Chưa có lần tạo ảnh live để chứng nhận quyền tài khoản. Không thể bảo đảm giống hệt tính năng, model, quota hoặc chất lượng của sản phẩm ChatGPT.
 
 Bản đầu tạo ảnh mới từ text, chưa hỗ trợ upload, mask/inpainting hoặc chỉnh sửa ảnh cũ theo pixel. Base64 được lưu trong message SQLite/outbox/export local, tối đa 16 MiB chuỗi ảnh mỗi kết quả; chưa có asset store/cloud sync. Context gửi tiếp thay ảnh cũ bằng ghi chú, không tự gửi lại payload; app không thể xem ảnh cũ để sửa chính xác. Dừng giữa chừng có thể vẫn bị provider tính phí; không có cam kết hoàn tiền.
+
+### Điều chỉnh theo giới hạn SIWC
+
+Tài liệu preview của OpenAI xác nhận image generation không được hỗ trợ qua Sign in with ChatGPT: https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations.md . App chặn chế độ ảnh với auth_mode chatgpt trước khi gửi request. Dùng OpenAI API Key có quyền tạo ảnh cho chế độ này; không cam kết dùng quota gói ChatGPT.

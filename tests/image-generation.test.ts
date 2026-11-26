@@ -70,3 +70,12 @@ describe("image generation tool", () => {
     }).rejects.toThrow("IMAGE_PROVIDER_UNSUPPORTED");
   });
 });
+
+it('blocks image generation through ChatGPT plan auth before contacting upstream', async () => {
+  let contacted = false;
+  const fetcher = async () => { contacted = true; throw new Error('unexpected upstream'); };
+  await expect(async () => {
+    for await (const _ of providerStream(request, 'secret', new AbortController().signal, fetcher as any)) {}
+  }).rejects.toThrow('CHATGPT_IMAGE_UNSUPPORTED');
+  expect(contacted).toBe(false);
+});

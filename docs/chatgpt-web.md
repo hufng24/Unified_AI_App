@@ -1,11 +1,14 @@
-# ChatGPT Web trong Unified AI Workspace
+# ChatGPT trực tiếp trong Unified AI Workspace
 
-Bấm **Mở ChatGPT trong app** ở sidebar để mở website chính thức https://chatgpt.com trong cửa sổ native riêng của ứng dụng. Cửa sổ đã mở sẽ được chọn lại thay vì tạo thêm. Người dùng tự đăng nhập trực tiếp vào website; phiên web khác với token Sign in with ChatGPT của Gateway.
+Luồng hiện tại dùng Sign in with ChatGPT → Responses API → streaming vào khung chat React → lưu SQLite. Không mở website/cửa sổ ChatGPT riêng. Module nhúng web thử nghiệm đã gỡ vì không đúng trải nghiệm người dùng yêu cầu.
 
-Đã kiểm runtime macOS: cửa sổ mở thành công, tải giao diện ChatGPT tiếng Việt, hiển thị mục Ảnh, Plugin, nút tải tệp, giọng nói và đăng nhập. Chưa kiểm đăng nhập thực tế, tạo ảnh, tải xuống, upload, micro/camera, popup OAuth hay thanh toán. Chỉ các tính năng mà ChatGPT cung cấp cho tài khoản và WebKit hiện tại mới có thể sử dụng; không cam kết đầy đủ tính năng của ứng dụng ChatGPT native.
+1. Trong **Kết nối AI**, đăng nhập bằng **Continue with ChatGPT**. Chỉ xác thực/đồng ý quyền diễn ra trên trình duyệt hệ thống.
+2. Sau khi xác minh xong, app chọn tài khoản và chuyển về màn hình chat. Bấm **Chat với ChatGPT** ở sidebar nếu đang ở màn hình khác hoặc dùng provider khác.
+3. Gõ vào ô Tin nhắn, gửi và nhận phản hồi trong cùng hội thoại của app. Giữ hỗ trợ streaming, stop, lịch sử, project instructions, regenerate và nhánh đã có.
+4. Kết nối được chọn được ghi nhớ trên máy. Khi chưa chọn, ưu tiên phiên ChatGPT hợp lệ. Nhiều tài khoản vẫn chọn được trong danh sách kết nối dưới ô nhập. Phiên hết quyền yêu cầu đăng nhập lại.
 
-Nội dung và lịch sử của cửa sổ này do ChatGPT quản lý, không tự đồng bộ sang SQLite, dự án hoặc Memory của Unified Workspace. Đây là website thật, không phải API hoặc bản dựng lại giao diện. Để trở về Workspace, chọn cửa sổ Unified AI Workspace.
+Phạm vi: tài khoản ChatGPT cung cấp quyền inference/model theo SIWC, không đồng nghĩa toàn bộ tính năng của website. Tạo ảnh, file search, Code Interpreter và một số tool khác chưa được hỗ trợ qua SIWC theo giới hạn OpenAI. Chế độ ảnh bị vô hiệu hóa khi chọn ChatGPT để tránh request không được hỗ trợ; không tự chuyển sang API Key và tính phí API. Skill không mở thêm quyền provider.
 
-Cửa sổ remote không được cấp Tauri capability: file capabilities/default.json chỉ áp dụng cửa sổ local `main`, không khai báo remote permissions. Không chèn script vào ChatGPT, không đọc/chép cookie hoặc mật khẩu và không giả user-agent. Điều hướng chỉ cho HTTPS/about:blank; tiêu đề hiển thị hostname đang mở để thấy đích đăng nhập. Có nút **Mở bằng trình duyệt** nếu nhà cung cấp đăng nhập hoặc chức năng website không hỗ trợ WebView; phiên trình duyệt không tự chuyển sang cửa sổ nhúng.
+Lịch sử thuộc SQLite của app, không tự đọc hoặc đồng bộ lịch sử chatgpt.com. Không dùng cookie website, backend nội bộ hoặc nhúng website để giả phản hồi native. Không cam kết voice/upload/chỉnh ảnh hoạt động như ChatGPT native.
 
-Bản này chưa phải trình duyệt đầy đủ: không có thanh địa chỉ/back/reload riêng, nhiều tab hoặc cam kết xử lý đầy đủ popup/download/voice. Không bypass CAPTCHA, cảnh báo bảo mật hoặc chính sách đăng nhập của nhà cung cấp.
+Tài liệu: https://developers.openai.com/siwc/token-sharing-open-source/preview-limitations.md

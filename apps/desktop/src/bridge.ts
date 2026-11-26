@@ -92,8 +92,6 @@ async function call<T>(
   );
 }
 export const bridge = {
-  openChatGPT: () => call<void>("chatgpt_open"),
-  openChatGPTBrowser: () => call<void>("chatgpt_browser"),
   snapshot: () => call<Snapshot>("snapshot"),
   messages: (id: string) =>
     call<Message[]>("conversation_messages", { conversationId: id }),

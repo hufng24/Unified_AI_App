@@ -49,6 +49,7 @@ import {
 } from "lucide-react";
 
 import MessageContent from "./components/MessageContent";
+import ChatGPTShortcut from "./components/ChatGPTShortcut";
 import type { Project, Provider, Message, SendInput } from "@uai/contracts";
 import { providerNames } from "@uai/contracts/display";
 import { bridge, branch, errorText, native, type NativeEvent } from "./bridge";
@@ -117,7 +118,13 @@ export default function App() {
     queryFn: bridge.snapshot,
   });
   const [notice, setNotice] = useState("");
-  const [connectionId, setConnectionId] = useState("");
+  const [connectionId, setConnectionId] = useState(() => {
+    try {
+      return localStorage.getItem("uai.selected-connection") ?? "";
+    } catch {
+      return "";
+    }
+  });
   const [busy, setBusy] = useState(false);
   const [imageMode, setImageMode] = useState(false);
   const [requestId, setRequestId] = useState("");
@@ -150,9 +157,24 @@ export default function App() {
     }
   };
   useEffect(() => {
-    if (!connectionId && data?.connections[0])
-      setConnectionId(data.connections[0].id);
+    if (!data) return;
+    if (!data.connections.some((c) => c.id === connectionId)) {
+      const preferred =
+        data.connections.find(
+          (c) => c.auth_mode === "chatgpt" && c.has_key && !c.needs_reauth,
+        ) ??
+        data.connections.find((c) => c.has_key && !c.needs_reauth) ??
+        data.connections[0];
+      setConnectionId(preferred?.id ?? "");
+    }
   }, [data, connectionId]);
+  useEffect(() => {
+    try {
+      localStorage.setItem("uai.selected-connection", connectionId);
+    } catch {
+      /* Selection remains usable when storage is unavailable. */
+    }
+  }, [connectionId]);
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(""), 7000);
@@ -377,26 +399,17 @@ export default function App() {
             </p>
           )}
         </div>
-        <div className="chatgpt-web-entry">
-          <button
-            className="primary"
-            disabled={!native}
-            onClick={() => void run(() => bridge.openChatGPT())}
-          >
-            Mở ChatGPT trong app
-          </button>
-          <p>
-            Dùng website ChatGPT chính thức trong cửa sổ riêng. Đăng nhập trực
-            tiếp; lịch sử nằm trên ChatGPT.
-          </p>
-          <button
-            className="ghost"
-            disabled={!native}
-            onClick={() => void run(() => bridge.openChatGPTBrowser())}
-          >
-            Mở bằng trình duyệt
-          </button>
-        </div>
+        <ChatGPTShortcut
+          connections={data.connections}
+          currentId={connectionId}
+          busy={busy}
+          onSelect={(id) => {
+            setConnectionId(id);
+            setImageMode(false);
+            ui.set({ view: "chat" });
+          }}
+          onConnect={() => ui.set({ view: "connections" })}
+        />
         <div className="sidebar-bottom">
           <div className="local-status">
             <span className="status-dot" />
@@ -696,11 +709,26 @@ export default function App() {
                     </div>
                   </div>
                 )}
+                {currentConnection?.auth_mode === "chatgpt" && (
+                  <div className="inline-chatgpt-status" role="status">
+                    <strong>ChatGPT · {currentConnection.default_model}</strong>
+                    <span>
+                      {currentConnection.needs_reauth ||
+                      !currentConnection.has_key
+                        ? "Cần đăng nhập lại tại Kết nối AI."
+                        : "Phản hồi trực tiếp trong hội thoại này · lưu lịch sử trên máy."}
+                    </span>
+                  </div>
+                )}
                 <label className="image-mode-control">
                   <input
                     type="checkbox"
-                    checked={imageMode}
-                    disabled={busy}
+                    checked={
+                      imageMode && currentConnection?.auth_mode !== "chatgpt"
+                    }
+                    disabled={
+                      busy || currentConnection?.auth_mode === "chatgpt"
+                    }
                     onChange={(e) => setImageMode(e.target.checked)}
                   />{" "}
                   Tạo ảnh · OpenAI{" "}
@@ -715,7 +743,10 @@ export default function App() {
                   conversationId={ui.conversation}
                   connections={data.connections}
                   connectionId={connectionId}
-                  onConnection={setConnectionId}
+                  onConnection={(id) => {
+                    setConnectionId(id);
+                    setImageMode(false);
+                  }}
                   busy={busy}
                   onStop={() => void run(() => bridge.cancel(requestId))}
                   onConnect={() => ui.set({ view: "connections" })}
@@ -734,7 +765,8 @@ export default function App() {
                     return send({
                       conversation_id: id,
                       connection_id: connectionId,
-                      image_generation: imageMode,
+                      image_generation:
+                        imageMode && currentConnection?.auth_mode !== "chatgpt",
                       text,
                     });
                   }}
@@ -835,7 +867,9 @@ export default function App() {
                   connections={data.connections}
                   onConnected={async (id) => {
                     setConnectionId(id);
+                    setImageMode(false);
                     await refresh();
+                    ui.set({ view: "chat" });
                   }}
                   onChanged={refresh}
                   onApi={(provider) => {

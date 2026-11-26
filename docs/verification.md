@@ -38,3 +38,7 @@ Bổ sung preview SVG hoàn chỉnh trong code block, giữ mã trong mục thu 
 ## ChatGPT Web trong app
 
 Đã build native và mở bằng nút sidebar, xác nhận trực quan trang chatgpt.com tải thành công trong cửa sổ native riêng, có các mục Ảnh, tải tệp, giọng nói và đăng nhập. Chưa đăng nhập/tạo ảnh hoặc kiểm tính năng sau đăng nhập. Không coi việc nhìn thấy nút là tính năng đã được kiểm thử. Xem chatgpt-web.md.
+
+## Điều chỉnh ChatGPT chat native
+
+Gỡ cửa sổ website và native command mở web. Nút Chat với ChatGPT chọn phiên đã xác minh và đưa về khung chat hiện tại. Test UI kiểm đúng account, phiên hết quyền/chưa đăng nhập và khóa chuyển khi đang generation. Tắt image tool với phiên ChatGPT. Giữ luồng OAuth/Responses đã có. Đã kiểm native live ngày 26/11/2026: chọn Chat với ChatGPT, gửi câu kiểm tra ngắn từ ô nhập, nhận đúng phản hồi hoàn chỉnh trong cùng hội thoại; không mở cửa sổ website. Tổng 32 test TypeScript/UI qua, build macOS thành công. Không công bố email/token tài khoản thử trong repository.

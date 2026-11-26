@@ -1,5 +1,4 @@
 mod chat;
-mod chatgpt_web;
 mod db;
 mod oauth;
 
@@ -501,8 +500,6 @@ pub fn run() {
             draft_get,
             draft_save,
             document_import,
-            chatgpt_web::chatgpt_open,
-            chatgpt_web::chatgpt_browser,
             data_export,
             chat::chat_send,
             chat::chat_cancel,

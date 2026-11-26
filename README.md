@@ -78,6 +78,6 @@ CI kiểm tra TypeScript trên Linux và build/test native trên macOS/Windows. 
 
 SQL Cloud chưa được chạy trên PostgreSQL/Supabase. Schema Local được app sử dụng và có smoke test. Không chạy baseline Cloud vào production hoặc coi file SQL là Sync Service đã được cài đặt.
 
-## Dùng website ChatGPT trong app
+## Chat trực tiếp bằng tài khoản ChatGPT
 
-Bấm **Mở ChatGPT trong app** ở sidebar và tự đăng nhập. Cửa sổ tải trực tiếp website ChatGPT, với lịch sử/tính năng do tài khoản ChatGPT quản lý; không trộn vào hội thoại SQLite. Đã kiểm trang mở được trên macOS; đăng nhập, tạo ảnh, voice và download chưa kiểm thực tế. Xem [khả năng và giới hạn](docs/chatgpt-web.md).
+Đăng nhập ở **Kết nối AI → Continue with ChatGPT**, rồi dùng nút **Chat với ChatGPT** ở sidebar. Gõ/nhận phản hồi ngay trong khung chat của app; không mở cửa sổ website riêng. Kết nối được ghi nhớ và lịch sử lưu SQLite. [Cách dùng và giới hạn](docs/chatgpt-web.md): SIWC chưa hỗ trợ tạo ảnh và toàn bộ tool của ChatGPT; không tự dùng API Key thay thế.

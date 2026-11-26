@@ -1976,6 +1976,8 @@ p {
 .image-mode-control {display:flex;align-items:center;gap:8px;padding:10px 28px;color:#b4c9e6;font-size:13px;flex-wrap:wrap;}
 .image-mode-control span {font-size:11px;color:#8296b4;}
 
-.chatgpt-web-entry {padding:14px 15px;border-top:1px solid #263750;}
-.chatgpt-web-entry button {width:100%;font-size:12px;}
-.chatgpt-web-entry p {font-size:11px;line-height:1.6;color:#8398b6;margin:8px 0;}
+.chatgpt-shortcut {padding:14px 15px;border-top:1px solid #263750;}
+.chatgpt-shortcut button {width:100%;font-size:12px;}
+.chatgpt-shortcut p,.chatgpt-shortcut small {font-size:11px;line-height:1.6;color:#8398b6;margin:8px 0;overflow-wrap:anywhere;}
+.inline-chatgpt-status {display:flex;gap:12px;flex-wrap:wrap;padding:10px 28px;font-size:12px;color:#93b7e3;}
+.inline-chatgpt-status span {color:#8398b6;}

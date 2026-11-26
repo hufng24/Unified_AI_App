@@ -1,5 +1,6 @@
 mod chat;
 mod db;
+mod oauth;
 
 use rusqlite::{params, Connection};
 use serde::Deserialize;
@@ -15,6 +16,8 @@ pub struct AppState {
     pub db: Mutex<Connection>,
     pub data_path: String,
     pub active: Mutex<HashMap<String, tokio::sync::watch::Sender<bool>>>,
+    pub oauth_login: Mutex<Option<tokio::sync::watch::Sender<bool>>>,
+    pub oauth_refresh: tokio::sync::Mutex<()>,
 }
 pub fn database_error(_: rusqlite::Error) -> String {
     "Không ghi hoặc đọc được dữ liệu cục bộ. Kiểm tra ổ đĩa và thử lại.".into()
@@ -39,9 +42,11 @@ fn snapshot(state: State<Arc<AppState>>) -> Result<Value, String> {
         .ok_or("Dữ liệu kết nối không hợp lệ.")?
     {
         let id = c["id"].as_str().unwrap_or_default();
-        c["has_key"] = json!(entry(id)
-            .and_then(|e| e.get_password().map_err(|_| String::new()))
-            .is_ok());
+        c["has_key"] = json!(
+            !c["needs_reauth"].as_bool().unwrap_or(false)
+                && (c["auth_mode"] == "api_key" || c["has_session"].as_bool().unwrap_or(false))
+                && oauth::has_key(id, c["auth_mode"].as_str().unwrap_or("api_key"))
+        );
     }
     Ok(v)
 }
@@ -184,16 +189,19 @@ async fn connection_test(
         )
         .map_err(database_error)?
     };
-    let key = entry(&connection_id)?
-        .get_password()
-        .map_err(|_| "Máy này chưa có API Key.")?;
+    let credentials = oauth::credential(&state, &connection_id).await?;
     let (base, token) = chat::gateway()?;
+    oauth::require_local_gateway(&base, &credentials.auth_mode)?;
+    let mut body = json!({"provider":provider,"model":model,"auth_mode":credentials.auth_mode});
+    if let Some(project) = credentials.quota_project {
+        body["quota_project"] = json!(project);
+    }
     let r = reqwest::Client::new()
         .post(format!("{base}/v1/connections/test"))
         .bearer_auth(token)
-        .header("X-Provider-Key", key)
+        .header("X-Provider-Key", credentials.token)
         .timeout(std::time::Duration::from_secs(15))
-        .json(&json!({"provider":provider,"model":model}))
+        .json(&body)
         .send()
         .await
         .map_err(|_| "Chưa kết nối được Gateway. Hãy chạy pnpm dev.")?;
@@ -204,17 +212,31 @@ async fn connection_test(
     }
 }
 #[tauri::command]
-fn connection_delete(state: State<Arc<AppState>>, connection_id: String) -> Result<(), String> {
+async fn connection_delete(
+    state: State<'_, Arc<AppState>>,
+    connection_id: String,
+) -> Result<String, String> {
     db::valid_id(&connection_id)?;
-    match entry(&connection_id)?.delete_credential() {
-        Ok(()) | Err(keyring::Error::NoEntry) => {}
-        Err(_) => return Err("Không xóa được Key. Hãy mở khóa kho bí mật và thử lại.".into()),
+    if !state
+        .active
+        .lock()
+        .map_err(|_| "Không đọc được trạng thái chat.")?
+        .is_empty()
+    {
+        return Err("Hãy dừng phản hồi trước khi xóa kết nối.".into());
     }
+    let revoked = oauth::revoke(&state, &connection_id).await?;
+    oauth::delete_keys(&connection_id)?;
     let mut db = state.lock()?;
     let tx = db.transaction().map_err(database_error)?;
     tx.execute(
         "UPDATE ai_connections SET deleted_at=?,local_revision=local_revision+1 WHERE id=?",
         params![db::now(), connection_id],
+    )
+    .map_err(database_error)?;
+    tx.execute(
+        "DELETE FROM local_oauth_tokens WHERE connection_id=?",
+        [&connection_id],
     )
     .map_err(database_error)?;
     tx.execute(
@@ -225,7 +247,7 @@ fn connection_delete(state: State<Arc<AppState>>, connection_id: String) -> Resu
     db::outbox(&tx, "ai_connections", &connection_id, json!({}), "delete")
         .map_err(database_error)?;
     tx.commit().map_err(database_error)?;
-    Ok(())
+    Ok(if revoked{"Đã xóa kết nối và thông tin xác thực trên máy."}else{"Đã xóa phiên trên máy nhưng chưa xác nhận thu hồi từ xa. Hãy kiểm tra quyền của app trong trang tài khoản của nhà cung cấp."}.into())
 }
 #[tauri::command]
 fn memory_save(
@@ -444,6 +466,7 @@ async fn data_export(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let path = app.path().app_data_dir()?;
             std::fs::create_dir_all(&path)?;
@@ -458,6 +481,8 @@ pub fn run() {
                 db: Mutex::new(db),
                 data_path: path.to_string_lossy().to_string(),
                 active: Mutex::new(HashMap::new()),
+                oauth_login: Mutex::new(None),
+                oauth_refresh: tokio::sync::Mutex::new(()),
             }));
             Ok(())
         })
@@ -477,7 +502,13 @@ pub fn run() {
             document_import,
             data_export,
             chat::chat_send,
-            chat::chat_cancel
+            chat::chat_cancel,
+            oauth::account_auth_config,
+            oauth::account_auth_cancel,
+            oauth::account_connect,
+            oauth::account_models,
+            oauth::account_select_model,
+            oauth::account_help
         ])
         .run(tauri::generate_context!())
         .expect("Không khởi động được Unified AI Workspace");

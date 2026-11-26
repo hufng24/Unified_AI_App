@@ -1,6 +1,6 @@
 # Unified AI Workspace
 
-Foundation Alpha 0.1.0 của ứng dụng desktop nhiều AI, phát triển từ [đặc tả triển khai](docs/Unified-AI-Workspace-Implementation-Spec.md). React, TypeScript, Tauri 2, Rust, SQLite và Fastify.
+Accounts Alpha 0.2.0 của ứng dụng desktop nhiều AI, phát triển từ [đặc tả triển khai](docs/Unified-AI-Workspace-Implementation-Spec.md). React, TypeScript, Tauri 2, Rust, SQLite và Fastify.
 
 Đã có source và bản build macOS chạy nội bộ. Đây chưa phải toàn bộ MVP; xem [phần đã làm và còn thiếu](docs/implementation-status.md) cùng [kết quả kiểm tra](docs/verification.md).
 
@@ -15,7 +15,9 @@ pnpm dev
 
 `pnpm dev` mở Gateway ở `127.0.0.1:8787`, Vite ở `127.0.0.1:1420` và cửa sổ Tauri. Launcher cấp token phát triển ngẫu nhiên cho hai process, không in token hoặc API Key. Đóng các phiên dev cũ nếu hai cổng này đang được dùng.
 
-Trong app, vào **Kết nối AI → Thêm kết nối**, chọn provider, nhập model ID bạn có quyền sử dụng và API Key. Key được lưu trong kho bí mật OS. Bấm **Kiểm tra**, sau đó tạo hội thoại và gửi prompt. Khi dùng Gateway, Key và context được chuyển tạm thời qua Gateway tới provider; chưa có E2EE toàn bộ.
+Trong app có **Continue with ChatGPT**, Google OAuth cho Gemini API và API Key cho cả ba provider. Xem [hướng dẫn kết nối tài khoản và điều kiện sử dụng](docs/account-connections.md). Claude consumer login chưa được cấp quyền; Google OAuth cần Cloud project/Desktop client, không dùng quota gói Gemini cá nhân. Chưa xác minh OAuth live bằng tài khoản thật.
+
+Với API Key, vào **Kết nối AI → Thêm kết nối**, chọn provider, nhập model ID bạn có quyền sử dụng và API Key. Key được lưu trong kho bí mật OS. Bấm **Kiểm tra**, sau đó tạo hội thoại và gửi prompt. Khi dùng Gateway, Key và context được chuyển tạm thời qua Gateway tới provider; chưa có E2EE toàn bộ.
 
 Không cần API Key để tạo dự án, ghi Memory, nhập TXT/Markdown hoặc xem dữ liệu local. Chat thật cần Internet và Key hợp lệ; chưa có kiểm thử live bằng tài khoản API trong lần bàn giao này.
 
@@ -45,12 +47,13 @@ Bản web hiển thị nhãn **XEM TRƯỚC UI**, dữ liệu mẫu chỉ giữ 
 - Giao diện ba vùng, dự án và chỉ dẫn theo dự án.
 - Chat lưu local, streaming, stop, giữ partial, regenerate và sửa prompt thành nhánh mới.
 - Adapter OpenAI Responses, Claude Messages và Gemini native; một conversation có thể đổi kết nối giữa các lượt.
+- OAuth ChatGPT/Google qua trình duyệt, PKCE/OIDC, token mã hóa, refresh, hủy, đăng nhập lại và chọn model từ catalog.
 - Kho bí mật OS, test kết nối, xác thực Gateway, idempotency ledger và lỗi được che nội dung nhạy cảm.
 - Memory nhập thủ công đúng phạm vi; TXT/Markdown UTF-8, chunk và context theo từ khóa.
 - Bản nháp autosave và flush khi rời màn hình; export JSON không có Key.
 - Local outbox ghi cùng transaction; **chưa có Cloud Sync**.
 
-Google Login/PKCE, Sync hai máy và resolver, semantic search, Memory tự trích xuất, PDF, model registry, backup import, CRUD đầy đủ và phát hành có chữ ký là các mốc tiếp theo. Không đặt dịch vụ local này lên Internet như một bản production đã hoàn thiện.
+Đăng nhập tài khoản Cloud Workspace, Sync hai máy và resolver, semantic search, Memory tự trích xuất, PDF, model registry, backup import, CRUD đầy đủ và phát hành có chữ ký là các mốc tiếp theo. Không đặt dịch vụ local này lên Internet như một bản production đã hoàn thiện.
 
 ## Kiểm tra
 

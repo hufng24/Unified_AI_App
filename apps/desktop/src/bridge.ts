@@ -5,6 +5,9 @@ import type {
   SendInput,
   NormalizedEvent,
   Provider,
+  AccountLoginInput,
+  AccountLoginResult,
+  AccountModel,
 } from "@uai/contracts";
 export const native = isTauri();
 export type NativeEvent = Partial<Omit<NormalizedEvent, "type">> & {
@@ -82,6 +85,8 @@ async function call<T>(
   }
   if (name === "draft_get") return "" as T;
   if (name === "draft_save") return undefined as T;
+  if (name === "account_auth_config")
+    return { google_client_id: null, google_quota_project: null } as T;
   throw new Error(
     "Chức năng này cần bản desktop. Chạy pnpm dev để dùng SQLite và kho API Key an toàn.",
   );
@@ -107,7 +112,20 @@ export const bridge = {
   testConnection: (id: string) =>
     call<void>("connection_test", { connectionId: id }),
   deleteConnection: (id: string) =>
-    call<void>("connection_delete", { connectionId: id }),
+    call<string>("connection_delete", { connectionId: id }),
+  accountConfig: () =>
+    call<{
+      google_client_id: string | null;
+      google_quota_project: string | null;
+    }>("account_auth_config"),
+  connectAccount: (input: AccountLoginInput) =>
+    call<AccountLoginResult>("account_connect", { input }),
+  cancelAccountLogin: () => call<void>("account_auth_cancel"),
+  accountModels: (connectionId: string) =>
+    call<AccountModel[]>("account_models", { connectionId }),
+  selectAccountModel: (connectionId: string, model: string) =>
+    call<void>("account_select_model", { connectionId, model }),
+  accountHelp: (provider: Provider) => call<void>("account_help", { provider }),
   saveMemory: (content: string, projectId?: string | null) =>
     call<string>("memory_save", { content, projectId: projectId ?? null }),
   deleteMemory: (id: string) => call<void>("memory_delete", { memoryId: id }),

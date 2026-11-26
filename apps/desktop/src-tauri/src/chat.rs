@@ -1,4 +1,4 @@
-use crate::{database_error, db, entry, AppState};
+use crate::{database_error, db, AppState};
 use futures_util::StreamExt;
 use rusqlite::params;
 use serde::Deserialize;
@@ -40,9 +40,9 @@ pub async fn chat_send(
     db::valid_id(&input.conversation_id)?;
     db::valid_id(&input.connection_id)?;
     let (base, token) = gateway()?;
-    let key = entry(&input.connection_id)?
-        .get_password()
-        .map_err(|_| "Hãy thêm API Key trong Kết nối AI trước khi gửi.")?;
+    let credentials = crate::oauth::credential(&state, &input.connection_id).await?;
+    crate::oauth::require_local_gateway(&base, &credentials.auth_mode)?;
+    let key = credentials.token;
     if !state
         .active
         .lock()
@@ -54,7 +54,7 @@ pub async fn chat_send(
     let request_id = db::id();
     let assistant_id = db::id();
     let user_id;
-    let request: Value;
+    let mut request: Value;
     {
         let mut connection = state.lock()?;
         let (owner, _) = db::identity(&connection).map_err(database_error)?;
@@ -189,7 +189,10 @@ pub async fn chat_send(
             }
         }
         let context = json!({"schema_version":1,"instructions":instructions,"messages":turns,"sources":sources,"snapshot_hash":hex::encode(Sha256::digest(path.iter().map(Value::to_string).collect::<String>().as_bytes()))});
-        request = json!({"request_id":request_id,"conversation_id":input.conversation_id,"user_message_id":user_id,"assistant_message_id":assistant_id,"connection_id":input.connection_id,"provider":provider,"model":model,"context":context,"max_output_tokens":2048,"stream":true});
+        request = json!({"request_id":request_id,"conversation_id":input.conversation_id,"user_message_id":user_id,"assistant_message_id":assistant_id,"connection_id":input.connection_id,"provider":provider,"auth_mode":credentials.auth_mode,"quota_project":credentials.quota_project,"model":model,"context":context,"max_output_tokens":2048,"stream":true});
+        if request["quota_project"].is_null() {
+            request.as_object_mut().unwrap().remove("quota_project");
+        }
         let tx = connection.transaction().map_err(database_error)?;
         if input.regenerate_user_id.is_none() {
             let content = json!([{"type":"text","text":text}]);
@@ -368,6 +371,13 @@ async fn run_generation(
         let mut db = state.lock()?;
         let tx = db.transaction().map_err(database_error)?;
         let content = json!([{"type":"text","text":text}]);
+        if request["auth_mode"] != "api_key" && code.as_deref() == Some("PROVIDER_KEY_INVALID") {
+            tx.execute(
+                "UPDATE local_oauth_registrations SET needs_reauth=1 WHERE connection_id=?",
+                [request["connection_id"].as_str().unwrap_or_default()],
+            )
+            .map_err(database_error)?;
+        }
         tx.execute("UPDATE messages SET content=?,status=?,updated_at=?,local_revision=local_revision+1 WHERE id=?",params![content.to_string(),status,db::now(),assistant_id]).map_err(database_error)?;
         tx.execute("UPDATE generations SET status=?,input_tokens=?,output_tokens=?,finish_reason=?,error_code=? WHERE id=?",params![status,usage_in,usage_out,finish_reason,code,request_id]).map_err(database_error)?;
         let (parent, created): (String, String) = tx

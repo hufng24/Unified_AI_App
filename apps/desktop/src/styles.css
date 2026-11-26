@@ -1742,3 +1742,224 @@ p {
     scroll-behavior: auto !important;
   }
 }
+
+/* Account authorization lives next to BYOK, with explicit provider capabilities. */
+.account-connections {
+  margin-bottom: 32px;
+}
+.account-section-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  margin: 28px 0 17px;
+}
+.account-section-title h2,
+.api-connections-heading {
+  font-size: 14px;
+  font-weight: 550;
+  color: #becde1;
+}
+.account-section-title p {
+  font-size: 11px;
+  line-height: 1.8;
+  color: #7088aa;
+  margin-top: 8px;
+}
+.account-section-title > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  color: #8db6ad;
+  white-space: nowrap;
+}
+.account-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+.account-provider {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+  border: 1px solid #2d405f;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #18263c, #111d30);
+}
+.account-provider-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.account-provider-name h3 {
+  font-size: 13px;
+  font-weight: 550;
+}
+.account-kind {
+  font-size: 8px;
+  margin-left: auto;
+  border: 1px solid #355371;
+  border-radius: 4px;
+  padding: 3px 5px;
+  color: #88b4db;
+}
+.account-kind.limited {
+  color: #baa17c;
+  border-color: #514635;
+}
+.account-provider p {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #8299b9;
+  margin: 16px 0 20px;
+  flex: 1;
+}
+.account-login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #536a88;
+  border-radius: 7px;
+  background: #e9edf3;
+  color: #152239;
+  font-size: 11px;
+  font-weight: 550;
+  width: 100%;
+}
+.account-login-button:hover:not(:disabled) {
+  background: white;
+}
+.account-provider > .text-button {
+  font-size: 9px;
+  justify-content: center;
+}
+.account-preview-note {
+  font-size: 10px;
+  line-height: 1.8;
+  color: #758dab;
+  margin: 15px 0;
+}
+.api-connections-heading {
+  margin-bottom: 19px;
+}
+.account-saved {
+  margin-top: 22px;
+  border: 1px solid #2c3e59;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.account-saved > h3 {
+  font-weight: 500;
+  font-size: 11px;
+  padding: 16px 20px;
+  background: #18263c;
+  color: #a9bfdd;
+}
+.account-saved-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border-top: 1px solid #263850;
+  background: #111d30;
+  flex-wrap: wrap;
+}
+.account-avatar {
+  display: grid;
+  place-items: center;
+  height: 34px;
+  width: 34px;
+  color: #9ab8df;
+  background: #223955;
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+.account-identity {
+  flex: 1;
+  min-width: 200px;
+  overflow-wrap: anywhere;
+}
+.account-identity strong {
+  font-size: 12px;
+  font-weight: 500;
+  color: #c6d7ed;
+  display: block;
+}
+.account-identity span {
+  display: block;
+  font-size: 10px;
+  color: #8da5c6;
+  margin-top: 7px;
+}
+.account-identity small {
+  display: block;
+  font-size: 9px;
+  color: #5d809f;
+  margin-top: 6px;
+}
+.account-saved-row .secondary-button {
+  font-size: 10px;
+  padding: 8px 10px;
+}
+.oauth-explanation {
+  padding: 15px;
+  border: 1px solid #2d4262;
+  border-radius: 8px;
+  background: #14253c;
+  margin-bottom: 23px;
+}
+.oauth-explanation p {
+  font-size: 11px;
+  line-height: 1.85;
+  color: #9fb6d5;
+}
+.oauth-explanation p + p {
+  margin-top: 10px;
+}
+.oauth-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  color: #9bbce9;
+  font-size: 11px;
+  line-height: 1.9;
+  background: #1a304e;
+  border: 1px solid #355579;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+.oauth-progress svg {
+  flex-shrink: 0;
+}
+.oauth-error {
+  color: #efb1b7;
+  border: 1px solid #743d4b;
+  border-radius: 7px;
+  padding: 13px 15px;
+  background: #361f2b;
+  font-size: 11px;
+  line-height: 1.9;
+  margin-top: 19px;
+}
+@media (max-width: 1150px) {
+  .account-provider-grid {
+    grid-template-columns: 1fr;
+  }
+  .account-provider p {
+    margin: 13px 0 17px;
+  }
+  .account-login-button {
+    max-width: 280px;
+  }
+  .account-provider > .text-button {
+    justify-content: flex-start;
+  }
+  .account-section-title {
+    align-items: flex-start;
+  }
+}

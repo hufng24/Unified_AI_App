@@ -28,7 +28,9 @@ export function upstream(
         model: req.model,
         instructions: req.context.instructions,
         input: messages,
-        max_output_tokens: req.max_output_tokens,
+        ...(req.auth_mode === "chatgpt"
+          ? {}
+          : { max_output_tokens: req.max_output_tokens }),
         stream: true,
         store: false,
       },
@@ -47,7 +49,13 @@ export function upstream(
     };
   return {
     url: `${urls.google}/models/${encodeURIComponent(req.model)}:streamGenerateContent?alt=sse`,
-    headers: { "x-goog-api-key": key },
+    headers:
+      req.auth_mode === "google_oauth"
+        ? {
+            Authorization: `Bearer ${key}`,
+            "x-goog-user-project": req.quota_project!,
+          }
+        : { "x-goog-api-key": key },
     body: {
       systemInstruction: {
         parts: [

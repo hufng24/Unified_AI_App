@@ -6,6 +6,8 @@ root = Path(__file__).resolve().parents[1]
 schema = (root / 'docs/sql/0001_local_baseline.sql').read_text()
 db = sqlite3.connect(':memory:')
 db.executescript(schema)
+db.executescript((root / 'apps/desktop/src-tauri/migrations/0002_account_auth.sql').read_text())
+assert db.execute('PRAGMA user_version').fetchone()[0] == 2
 db.execute("INSERT INTO local_accounts VALUES ('user-a','A')")
 db.execute("INSERT INTO local_accounts VALUES ('user-b','B')")
 db.execute("INSERT INTO workspaces(id,owner_id,name) VALUES ('wa','user-a','A')")

@@ -27,8 +27,19 @@ pub fn initialize(db: &mut Connection) -> rusqlite::Result<()> {
     if version == 0 {
         db.execute_batch(SCHEMA)?;
     }
-    if version > 1 {
+    if version > 2 {
         return Err(rusqlite::Error::InvalidQuery);
+    }
+    if version <= 1 {
+        if version == 1 {
+            if let Some(path) = db.path().filter(|p| !p.is_empty() && *p != ":memory:") {
+                let backup = std::path::PathBuf::from(format!("{path}.before-v2.backup"));
+                if !backup.exists() {
+                    db.backup("main", &backup, None)?;
+                }
+            }
+        }
+        db.execute_batch(include_str!("../migrations/0002_account_auth.sql"))?;
     }
     let count: i64 = db.query_row("SELECT count(*) FROM local_accounts", [], |r| r.get(0))?;
     if count == 0 {
@@ -98,7 +109,7 @@ pub fn rows(
 pub fn snapshot(db: &Connection, path: &str) -> rusqlite::Result<Value> {
     let projects=rows(db,"SELECT id,name,description,instructions FROM projects WHERE deleted_at IS NULL ORDER BY updated_at DESC",|r|Ok(json!({"id":r.get::<_,String>(0)?,"name":r.get::<_,String>(1)?,"description":r.get::<_,String>(2)?,"instructions":r.get::<_,String>(3)?})))?;
     let conversations=rows(db,"SELECT id,title,project_id,selected_leaf_id,updated_at FROM conversations WHERE deleted_at IS NULL ORDER BY updated_at DESC",|r|Ok(json!({"id":r.get::<_,String>(0)?,"title":r.get::<_,String>(1)?,"project_id":r.get::<_,Option<String>>(2)?,"selected_leaf_id":r.get::<_,Option<String>>(3)?,"updated_at":r.get::<_,String>(4)?})))?;
-    let connections=rows(db,"SELECT id,provider,name,default_model FROM ai_connections WHERE deleted_at IS NULL ORDER BY created_at",|r|Ok(json!({"id":r.get::<_,String>(0)?,"provider":r.get::<_,String>(1)?,"name":r.get::<_,String>(2)?,"default_model":r.get::<_,Option<String>>(3)?})))?;
+    let connections=rows(db,"SELECT c.id,c.provider,c.name,c.default_model,c.auth_mode,r.email,COALESCE(r.needs_reauth,0),EXISTS(SELECT 1 FROM local_oauth_tokens t WHERE t.connection_id=c.id) FROM ai_connections c LEFT JOIN local_oauth_registrations r ON c.id=r.connection_id WHERE c.deleted_at IS NULL ORDER BY c.created_at",|r|Ok(json!({"id":r.get::<_,String>(0)?,"provider":r.get::<_,String>(1)?,"name":r.get::<_,String>(2)?,"default_model":r.get::<_,Option<String>>(3)?,"auth_mode":r.get::<_,String>(4)?,"account_email":r.get::<_,Option<String>>(5)?,"needs_reauth":r.get::<_,i64>(6)?!=0,"has_session":r.get::<_,i64>(7)?!=0})))?;
     let memories=rows(db,"SELECT id,scope,project_id,content,category,status FROM memories WHERE deleted_at IS NULL ORDER BY updated_at DESC",|r|Ok(json!({"id":r.get::<_,String>(0)?,"scope":r.get::<_,String>(1)?,"project_id":r.get::<_,Option<String>>(2)?,"content":r.get::<_,String>(3)?,"category":r.get::<_,String>(4)?,"status":r.get::<_,String>(5)?})))?;
     let documents=rows(db,"SELECT id,project_id,name,byte_size,processing_status FROM documents WHERE deleted_at IS NULL ORDER BY created_at DESC",|r|Ok(json!({"id":r.get::<_,String>(0)?,"project_id":r.get::<_,Option<String>>(1)?,"name":r.get::<_,String>(2)?,"byte_size":r.get::<_,i64>(3)?,"processing_status":r.get::<_,String>(4)?})))?;
     let pending: i64 = db.query_row("SELECT count(*) FROM local_outbox", [], |r| r.get(0))?;
@@ -199,5 +210,42 @@ mod tests {
         assert!(identity(&db).is_ok());
         let s = snapshot(&db, "test").unwrap().to_string();
         assert!(!s.contains("api_key"));
+    }
+    #[test]
+    fn upgrades_v1_without_losing_projects_or_api_connections() {
+        let mut db = Connection::open_in_memory().unwrap();
+        db.execute_batch(SCHEMA).unwrap();
+        db.execute("INSERT INTO local_accounts VALUES ('owner','Test')", [])
+            .unwrap();
+        db.execute(
+            "INSERT INTO workspaces(id,owner_id,name) VALUES ('workspace','owner','Test')",
+            [],
+        )
+        .unwrap();
+        db.execute("INSERT INTO projects(id,owner_id,workspace_id,name) VALUES ('project','owner','workspace','Existing project')",[]).unwrap();
+        db.execute("INSERT INTO ai_connections(id,owner_id,provider,name,default_model) VALUES ('connection','owner','openai','Existing key','test')",[]).unwrap();
+        initialize(&mut db).unwrap();
+        assert_eq!(
+            db.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
+        assert_eq!(
+            db.query_row("SELECT name FROM projects WHERE id='project'", [], |r| {
+                r.get::<_, String>(0)
+            })
+            .unwrap(),
+            "Existing project"
+        );
+        assert_eq!(
+            db.query_row(
+                "SELECT auth_mode FROM ai_connections WHERE id='connection'",
+                [],
+                |r| r.get::<_, String>(0)
+            )
+            .unwrap(),
+            "api_key"
+        );
+        initialize(&mut db).unwrap();
     }
 }

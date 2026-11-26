@@ -5,6 +5,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const envFile = join(root, ".env");
+if (existsSync(envFile)) process.loadEnvFile(envFile);
 const api = join(root, "apps/api");
 const target = join(root, "apps/desktop/src-tauri/target");
 const candidates = ["release", "debug"].map((profile) =>

@@ -1,3 +1,5 @@
+import Modal from "./components/Modal";
+import AccountConnections from "./components/AccountConnections";
 import {
   useEffect,
   useRef,
@@ -107,78 +109,6 @@ function ProviderBadge({ provider }: { provider: Provider }) {
     </span>
   );
 }
-function Modal({
-  title,
-  subtitle,
-  onClose,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const el = ref.current;
-    el?.querySelector<HTMLElement>("input,textarea,select,button")?.focus();
-    const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-      if (e.key === "Tab" && el) {
-        const all = [
-          ...el.querySelectorAll<HTMLElement>(
-            'button:not([disabled]),input,textarea,select,[tabindex="0"]',
-          ),
-        ];
-        const first = all[0],
-          last = all.at(-1);
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener("keydown", key);
-    return () => {
-      document.removeEventListener("keydown", key);
-      previous?.focus();
-    };
-  }, []);
-  return (
-    <div
-      className="modal-backdrop"
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        ref={ref}
-        className="modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <div className="modal-heading">
-          <div>
-            <h2>{title}</h2>
-            {subtitle && <p>{subtitle}</p>}
-          </div>
-          <button className="icon-button" aria-label="Đóng" onClick={onClose}>
-            <X size={19} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
 export default function App() {
   const ui = useUI();
   const qc = useQueryClient();
@@ -195,6 +125,8 @@ export default function App() {
     null,
   );
   const [connectionModal, setConnectionModal] = useState(false);
+  const [connectionProvider, setConnectionProvider] =
+    useState<Provider>("openai");
   const [memoryModal, setMemoryModal] = useState(false);
   const [deleteConnection, setDeleteConnection] = useState<string | null>(null);
   const [deleteMemory, setDeleteMemory] = useState<string | null>(null);
@@ -448,7 +380,7 @@ export default function App() {
             <span>
               Lưu trên thiết bị
               <small>
-                {native ? "SQLite · Bản nội bộ 0.1" : "Chế độ xem giao diện"}
+                {native ? "SQLite · Bản nội bộ 0.2" : "Chế độ xem giao diện"}
               </small>
             </span>
             <ShieldCheck size={16} />
@@ -857,7 +789,7 @@ export default function App() {
                 <PageHeading
                   eyebrow="AI THEO CÁCH CỦA BẠN"
                   title="Kết nối những khả năng."
-                  description="Sử dụng API Key riêng. Key chỉ được lưu trong kho bí mật của thiết bị."
+                  description="Chọn đăng nhập tài khoản được hỗ trợ hoặc dùng API Key riêng."
                   action={
                     <button
                       className="primary-button"
@@ -875,6 +807,22 @@ export default function App() {
                     vẫn được lưu cục bộ.
                   </span>
                 </div>
+                <AccountConnections
+                  connections={data.connections}
+                  onConnected={async (id) => {
+                    setConnectionId(id);
+                    await refresh();
+                  }}
+                  onChanged={refresh}
+                  onApi={(provider) => {
+                    setConnectionProvider(provider);
+                    setConnectionModal(true);
+                  }}
+                  onNotice={setNotice}
+                />
+                <h2 className="api-connections-heading">
+                  Kết nối bằng API Key
+                </h2>
                 <div className="connections-list">
                   {(["openai", "anthropic", "google"] as Provider[]).map(
                     (p) => (
@@ -893,7 +841,11 @@ export default function App() {
                           </div>
                         </div>
                         {data.connections
-                          .filter((c) => c.provider === p)
+                          .filter(
+                            (c) =>
+                              c.provider === p &&
+                              (c.auth_mode ?? "api_key") === "api_key",
+                          )
                           .map((c) => (
                             <div className="saved-connection" key={c.id}>
                               <div>
@@ -910,7 +862,7 @@ export default function App() {
                                 onClick={() =>
                                   void run(
                                     () => bridge.testConnection(c.id),
-                                    "Đã xác minh quyền truy cập model.",
+                                    "Đã xác minh kết nối và danh sách model; quyền sinh phản hồi được kiểm khi gửi.",
                                   )
                                 }
                               >
@@ -925,7 +877,11 @@ export default function App() {
                               </button>
                             </div>
                           ))}
-                        {!data.connections.some((c) => c.provider === p) && (
+                        {!data.connections.some(
+                          (c) =>
+                            c.provider === p &&
+                            (c.auth_mode ?? "api_key") === "api_key",
+                        ) && (
                           <div className="connection-empty">
                             <span>Chưa có kết nối</span>
                             <button
@@ -1216,7 +1172,7 @@ export default function App() {
                     Unified AI Workspace
                   </h3>
                   <p>
-                    Phiên bản 0.1.0 · Foundation Alpha · Phát triển theo đặc tả
+                    Phiên bản 0.2.0 · Accounts Alpha · Phát triển theo đặc tả
                     phiên bản 2.0.
                   </p>
                   <p>
@@ -1370,6 +1326,7 @@ export default function App() {
       )}
       {connectionModal && (
         <ConnectionForm
+          initialProvider={connectionProvider}
           onClose={() => setConnectionModal(false)}
           onSave={async (input) => {
             try {
@@ -1407,7 +1364,8 @@ export default function App() {
           onClose={() => setDeleteConnection(null)}
           onConfirm={() =>
             void run(async () => {
-              await bridge.deleteConnection(deleteConnection);
+              const result = await bridge.deleteConnection(deleteConnection);
+              setNotice(result);
               if (connectionId === deleteConnection) setConnectionId("");
               setDeleteConnection(null);
             })
@@ -1581,7 +1539,7 @@ export function Composer({
                 >
                   {connections.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {providerNames[c.provider]} · {c.default_model}
+                      {c.name} · {c.default_model}
                     </option>
                   ))}
                 </select>
@@ -1703,10 +1661,12 @@ function ProjectForm({
   );
 }
 function ConnectionForm({
+  initialProvider = "openai",
   onClose,
   onSave,
 }: {
   onClose: () => void;
+  initialProvider?: Provider;
   onSave: (input: {
     provider: Provider;
     name: string;
@@ -1714,7 +1674,7 @@ function ConnectionForm({
     api_key: string;
   }) => Promise<void>;
 }) {
-  const [provider, setProvider] = useState<Provider>("openai"),
+  const [provider, setProvider] = useState<Provider>(initialProvider),
     [name, setName] = useState(""),
     [model, setModel] = useState(""),
     [key, setKey] = useState(""),

@@ -1,4 +1,4 @@
-# Foundation Alpha 0.1.0
+# Accounts Alpha 0.2.0
 
 Triển khai ngày 26 tháng 11 năm 2026 dựa trên đặc tả 2.0. Đây là bản chạy nội bộ, chưa phải toàn bộ MVP hoặc bản phát hành production.
 
@@ -19,9 +19,15 @@ Triển khai ngày 26 tháng 11 năm 2026 dựa trên đặc tả 2.0. Đây là
 - Browser preview dùng dữ liệu mẫu trong bộ nhớ, không phải kho dữ liệu thật và không cho lưu Key.
 - CI đã khai báo cho TypeScript và native macOS/Windows; cần xem kết quả GitHub Actions sau khi push.
 
+## Bổ sung kết nối tài khoản 0.2
+
+- ChatGPT SIWC dynamic registration, Google Gemini API OAuth Desktop, PKCE/state/nonce, xác minh JWT và chọn model từ catalog.
+- Token mã hóa AES-GCM trong SQLite với khóa trong OS vault riêng, tự refresh, hủy, đăng nhập lại và thử revoke khi xóa. Migration giữ dữ liệu v1.
+- Claude vẫn dùng API Key, chưa có quyền triển khai consumer OAuth. Google cần Cloud project/OAuth client. Xem [cấu hình và giới hạn](account-connections.md). Chưa xác minh đăng nhập/inference live.
+
 ## Các mốc còn lại trong đặc tả
 
-- Google Login/PKCE, device registry và chuyển local identity sang tài khoản Cloud.
+- Google Login cho tài khoản Workspace/Cloud, device registry và chuyển local identity sang tài khoản Cloud.
 - Cloud Sync push/pull, receipt, conflict resolver, snapshot reset và file sync. Outbox hiện chỉ là local queue, chưa gửi Cloud.
 - Model Registry có capability/token/pricing được kiểm chứng; manifest provider live và kiểm thử bằng API Key thực tế.
 - Context preview chính xác từng nguồn, source drawer và token budget theo model, summary và compaction.

@@ -1,11 +1,10 @@
 import Fastify from "fastify";
 import rateLimit from "@fastify/rate-limit";
-import { chatSchema, providerSchema } from "@uai/contracts";
+import { chatSchema, connectionTestSchema } from "@uai/contracts";
 import { providerStream, ProviderError, urls } from "./adapters.js";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { z } from "@uai/contracts";
 
 export function createServer(
   options: {
@@ -99,15 +98,9 @@ export function createServer(
   }));
   app.get("/v1/status", async () => ({ ready: true }));
   app.post("/v1/connections/test", async (req, reply) => {
-    const parsed = z
-      .object({
-        provider: providerSchema,
-        model: z.string().regex(/^[\w.:-]{1,120}$/),
-      })
-      .strict()
-      .safeParse(req.body);
+    const parsed = connectionTestSchema.safeParse(req.body);
     const key = req.headers["x-provider-key"];
-    if (!parsed.success || typeof key !== "string" || !key || key.length > 4096)
+    if (!parsed.success || typeof key !== "string" || !key || key.length > 8192)
       return reply.code(400).send({
         error: {
           code: "VALIDATION_ERROR",
@@ -115,25 +108,40 @@ export function createServer(
           retryable: false,
         },
       });
-    const { provider, model } = parsed.data;
+    const { provider, model, auth_mode, quota_project } = parsed.data;
     const url =
-      provider === "google"
-        ? `${urls.google}/models/${encodeURIComponent(model)}`
-        : `${urls[provider]}/models/${encodeURIComponent(model)}`;
+      auth_mode === "chatgpt"
+        ? `${urls.openai}/models`
+        : provider === "google"
+          ? `${urls.google}/models/${encodeURIComponent(model)}`
+          : `${urls[provider]}/models/${encodeURIComponent(model)}`;
     const headers: Record<string, string> =
       provider === "openai"
         ? { Authorization: `Bearer ${key}` }
         : provider === "anthropic"
           ? { "x-api-key": key, "anthropic-version": "2023-06-01" }
-          : { "x-goog-api-key": key };
+          : auth_mode === "google_oauth"
+            ? {
+                Authorization: `Bearer ${key}`,
+                "x-goog-user-project": quota_project!,
+              }
+            : { "x-goog-api-key": key };
     try {
       const r = await (options.fetcher ?? fetch)(url, {
         headers: headers as Record<string, string>,
         signal: AbortSignal.timeout(10000),
       });
-      await r.body?.cancel();
-      return reply.code(r.ok ? 200 : 422).send(
-        r.ok
+      let valid = r.ok;
+      if (r.ok && auth_mode === "chatgpt") {
+        const catalog = (await r.json()) as {
+          models?: { slug: string; visibility?: string }[];
+        };
+        valid = !!catalog.models?.some(
+          (m) => m.slug === model && m.visibility === "list",
+        );
+      } else await r.body?.cancel();
+      return reply.code(valid ? 200 : 422).send(
+        valid
           ? { valid: true, model_available: true }
           : {
               error: {
@@ -164,7 +172,7 @@ export function createServer(
         !parsed.success ||
         typeof key !== "string" ||
         !key ||
-        key.length > 4096
+        key.length > 8192
       )
         return reply.code(400).send({
           error: {

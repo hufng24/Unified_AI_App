@@ -3,6 +3,27 @@ export { z };
 
 export const providerSchema = z.enum(["openai", "anthropic", "google"]);
 export type Provider = z.infer<typeof providerSchema>;
+export const authModeSchema = z.enum(["api_key", "chatgpt", "google_oauth"]);
+export type AuthMode = z.infer<typeof authModeSchema>;
+const quotaProjectSchema = z.string().regex(/^[a-z][a-z0-9-]{4,62}$/);
+export const connectionTestSchema = z
+  .object({
+    provider: providerSchema,
+    model: z.string().regex(/^[\w.:-]{1,120}$/),
+    auth_mode: authModeSchema.optional(),
+    quota_project: quotaProjectSchema.optional(),
+  })
+  .strict()
+  .refine(
+    (x) => x.auth_mode !== "chatgpt" || x.provider === "openai",
+    "ChatGPT login requires OpenAI",
+  )
+  .refine(
+    (x) =>
+      x.auth_mode !== "google_oauth" ||
+      (x.provider === "google" && !!x.quota_project),
+    "Google OAuth requires Google and a quota project",
+  );
 export const turnSchema = z
   .object({
     role: z.enum(["user", "assistant"]),
@@ -24,6 +45,8 @@ export const chatSchema = z
     assistant_message_id: z.uuid(),
     connection_id: z.uuid(),
     provider: providerSchema,
+    auth_mode: authModeSchema.optional(),
+    quota_project: quotaProjectSchema.optional(),
     model: z.string().regex(/^[a-zA-Z0-9._:-]{1,120}$/),
     context: z
       .object({
@@ -43,7 +66,17 @@ export const chatSchema = z
     max_output_tokens: z.number().int().min(1).max(8192),
     stream: z.literal(true),
   })
-  .strict();
+  .strict()
+  .refine(
+    (x) => x.auth_mode !== "chatgpt" || x.provider === "openai",
+    "ChatGPT login requires OpenAI",
+  )
+  .refine(
+    (x) =>
+      x.auth_mode !== "google_oauth" ||
+      (x.provider === "google" && !!x.quota_project),
+    "Google OAuth requires Google and a quota project",
+  );
 export type ChatRequest = z.infer<typeof chatSchema>;
 export type NormalizedEvent = {
   request_id: string;
@@ -92,6 +125,21 @@ export type Connection = {
   name: string;
   default_model: string | null;
   has_key: boolean;
+  auth_mode?: AuthMode;
+  account_email?: string | null;
+  needs_reauth?: boolean;
+};
+export type AccountModel = { id: string; name: string };
+export type AccountLoginInput = {
+  provider: "openai" | "google";
+  connection_id?: string;
+  client_id?: string;
+  client_secret?: string;
+  quota_project?: string;
+};
+export type AccountLoginResult = {
+  connection_id: string;
+  models: AccountModel[];
 };
 export type Memory = {
   id: string;
